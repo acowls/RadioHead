@@ -702,13 +702,11 @@ ISR(RH_ASK_TIMER_VECTOR)
     thisASKDriver->handleTimerInterrupt();
 }
 
-#elif (RH_PLATFORM == RH_PLATFORM_MSP430) || (RH_PLATFORM == RH_PLATFORM_STM32)
-// LaunchPad, Maple
+#elif (RH_PLATFORM == RH_PLATFORM_STM32)
 void interrupt()
 {
     thisASKDriver->handleTimerInterrupt();
 }
-
 #elif (RH_PLATFORM == RH_PLATFORM_STM32F2) // Photon
 void TimerInterruptHandler()
 {
