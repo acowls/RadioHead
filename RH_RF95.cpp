@@ -34,6 +34,7 @@ RH_RF95::RH_RF95(uint8_t slaveSelectPin, uint8_t interruptPin, RHGenericSPI& spi
     RHSPIDriver(slaveSelectPin, spi),
     _rxBufValid(0)
 {
+    _deviceVersion = 0x00;
     _interruptPin = interruptPin;
     _myInterruptIndex = 0xff; // Not allocated yet
     _enableCRC = true;

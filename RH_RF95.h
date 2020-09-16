@@ -876,7 +876,7 @@ private:
     /// Low level interrupt service routine for device connected to interrupt 1
     static void         isr1();
 
-    /// Low level interrupt service routine for device connected to interrupt 1
+    /// Low level interrupt service routine for device connected to interrupt 2
     static void         isr2();
 
     /// Array of instances connected to interrupts 0 and 1
@@ -910,8 +910,8 @@ private:
     /// If true, sends CRCs in every packet and requires a valid CRC in every received packet
     bool                _enableCRC;
 
-    /// device ID
-    uint8_t		_deviceVersion = 0x00;
+    /// device ID (defaults to 0x00 in constructor)
+    uint8_t		_deviceVersion /* = 0x00 */;
     
 };
 
