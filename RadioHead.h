@@ -1384,6 +1384,16 @@ these examples and explanations and extend them to suit your needs.
  #endif
 #endif
 
+// At complie time can have both ARDUINO defined at the same time as MSP430
+#if defined(ARDUINO) && (defined(__MSP430G2452__) || defined(__MSP430G2553__))
+  #define RH_PLATFORM RH_PLATFORM_MSP430
+#endif
+
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+#pragma message(">>> RadioHead.h  RH_PLATFORM #" STRING(RH_PLATFORM) " and ARDUINO #" STRING(ARDUINO))
+
+
 ////////////////////////////////////////////////////
 // Platform specific headers:
 #if (RH_PLATFORM == RH_PLATFORM_ARDUINO)
@@ -1458,6 +1468,8 @@ these examples and explanations and extend them to suit your needs.
  #include <SPI.h>
  #define RH_HAVE_HARDWARE_SPI
  #define RH_HAVE_SERIAL
+ #define SPI_HAS_TRANSACTION
+ #define RH_MISSING_SPIUSINGINTERRUPT
 
 #elif (RH_PLATFORM == RH_PLATFORM_UNO32 || RH_PLATFORM == RH_PLATFORM_CHIPKIT_CORE)
  #include <WProgram.h>
@@ -1592,6 +1604,10 @@ these examples and explanations and extend them to suit your needs.
 // See hardware/esp8266/2.0.0/cores/esp8266/Arduino.h
  #define ATOMIC_BLOCK_START { uint32_t __savedPS = xt_rsil(15);
  #define ATOMIC_BLOCK_END xt_wsr_ps(__savedPS);}
+#elif (RH_PLATFORM == RH_PLATFORM_MSP430)
+// MPS430 - we don't have atomic blocks
+ #define ATOMIC_BLOCK_START {;
+ #define ATOMIC_BLOCK_END   ;}
 #else 
  // TO BE DONE:
  #define ATOMIC_BLOCK_START
@@ -1617,6 +1633,9 @@ these examples and explanations and extend them to suit your needs.
    void mgosYield(void);
  }
  #define YIELD mgosYield()
+ // On MSP430 we don't use yield
+#elif (RH_PLATFORM == RH_PLATFORM_MSP430)
+ #define YIELD ;
 #else
  #define YIELD
 #endif
