@@ -1,7 +1,7 @@
 // RadioHead.h
 // Author: Mike McCauley (mikem@airspayce.com) DO NOT CONTACT THE AUTHOR DIRECTLY
 // Copyright (C) 2014 Mike McCauley
-// $Id: RadioHead.h,v 1.84 2020/05/22 04:47:33 mikem Exp mikem $
+// $Id: RadioHead.h,v 1.89 2020/08/05 04:32:19 mikem Exp mikem $
 
 /*! \mainpage RadioHead Packet Radio library for embedded microprocessors
 
@@ -10,7 +10,7 @@ It provides a complete object-oriented library for sending and receiving packeti
 via a variety of common data radios and other transports on a range of embedded microprocessors.
 
 The version of the package that this documentation refers to can be downloaded 
-from http://www.airspayce.com/mikem/arduino/RadioHead/RadioHead-1.106.zip
+from http://www.airspayce.com/mikem/arduino/RadioHead/RadioHead-1.112.zip
 You can find the latest version of the documentation at http://www.airspayce.com/mikem/arduino/RadioHead
 
 You can also find online help and discussion at 
@@ -385,6 +385,20 @@ strings, IO and buffers. We are happy with this, but we are aware
 that some people may think we are legaving useful tools on the
 table. You should not use this code as an example of how to do
 generalised C++ programming on well resourced processors.
+
+\par Code Contributions
+
+We welcome, and will consider for merging into the mainline, contributions of fixes, patches, improvements etc. 
+that meet the following criteria:
+
+- Are generally useful to more than a few people.
+- Are thoroughly tested.
+- Dont break anything else.
+- Are backwards compatible.
+- Are properly and completely documented.
+- Conform to the coding style of the rest of the library.
+- Clearly transfer the ownership of the intellectual property to AirSpayce Pty Ltd.
+- Are posted on the Google group as a patch in unified Diff format.
 
 \par Donations
 
@@ -1020,6 +1034,39 @@ application. To purchase a commercial license, contact info@airspayce.com
 	     Fixed documentation SS->NSEL pin for RH_RF22 with AtMega. Seems that SS on that platform
 	     is now defined as pin 10, not 53. Dont know when that changed.<br>
 
+\version 1.107 2020-06-26
+             Improvements to RHEncryptedDriver, so that you will get an explanatory error message if you 
+	     include RHEncryptedDriver.h without enabling the class with RH_ENABLE_ENCRYPTION_MODULE in RadioHead.h.<br>
+	     Fixed newly introduced errors when compiling for ATTiny 25/45/85.<br>
+
+\version 1.108 2020-07-05
+             Fixed a problem with RH_RF22 on ESP8266 introcuced in version 1.106 which prevented
+	     messages being received. Some other cleanups in RH_RF22<br>
+
+\version 1.109 2020-07-23
+             Fixed a problem that prevented RHEncryptedDriver compiling when RH_ENCRYPTED_DRIVER was enabled.<br>
+	     Added optiona hops argument to RHRouter and RHMesh recvfromAck() and receivedFomAckTimeout()
+	     to allow the hop count to be retreived if desired.
+\version 1.110 2020-07-28
+	     Fixed a problem where _spi.beginTransaction and _spi.endTransaction were missing from RHSPIDriver::spiRead.
+\version 1.111 2020-07-30
+             Fixed some compilation problems on some platforms with RH_PLATFORM_ATTINY_MEGA and Kondes MegaTinyCore 1.1.2.<br>
+	     Fixed some other errors with  Kondes MegaTinyCore 2.0.5: F_CPU_CORRECTED no longer exists, 
+	     bitOrder and PinStatus no longer needed.<br>
+	     Improved detection of RH_PLATFORM_ATTINY_MEGA by looking for defined(MEGATINYCORE), defined
+	     in later versions of MegaTinyCore.
+
+\version 1.112 2020-08-05
+             Fixed some compiler warnings in STM32 Discovery and other processors.<br>
+	     Adde support for ST's Arduino Core STM32, https://github.com/stm32duino/Arduino_Core_STM32
+	     to RH_ASK, per https://github.com/r-map/rmap/commit/edf9931b21cb7df5b4f67835307255e0fcb301bb.<br>
+	     Added documentation about requiremnts for code contributions.
+	     Added library.properties file that some IDEs need.
+	     Added support for multithreaded RH_RF95 support on Raspberry Pi, courtesy Tilman Glötzner.
+	     Includes example programs, including for the Dragino Lora/GPS Hat which
+	     send GPS coordinates.<br>
+	     
+
 \author  Mike McCauley. DO NOT CONTACT THE AUTHOR DIRECTLY. USE THE GOOGLE GROUP GIVEN ABOVE
 */
 
@@ -1267,7 +1314,7 @@ these examples and explanations and extend them to suit your needs.
 
 // Official version numbers are maintained automatically by Makefile:
 #define RH_VERSION_MAJOR 1
-#define RH_VERSION_MINOR 106
+#define RH_VERSION_MINOR 112
 
 // Symbolic names for currently supported platform types
 #define RH_PLATFORM_ARDUINO          1
@@ -1312,7 +1359,7 @@ these examples and explanations and extend them to suit your needs.
   #define RH_PLATFORM RH_PLATFORM_STM32L0
  #elif defined(MGOS)
   #define RH_PLATFORM RH_PLATFORM_MONGOOSE_OS
- #elif defined(ARDUINO_attinyxy2) || defined(ARDUINO_attinyxy4) || defined(ARDUINO_attinyxy6) || defined(ARDUINO_attinyxy7)
+#elif defined(MEGATINYCORE) || defined(ARDUINO_attinyxy2) || defined(ARDUINO_attinyxy4) || defined(ARDUINO_attinyxy6) || defined(ARDUINO_attinyxy7)
   #define RH_PLATFORM RH_PLATFORM_ATTINY_MEGA
  #elif defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtinyX4__) || defined(__AVR_ATtinyX5__) || defined(__AVR_ATtiny2313__) || defined(__AVR_ATtiny4313__) || defined(__AVR_ATtinyX313__) || defined(ARDUINO_attiny)
   #define RH_PLATFORM RH_PLATFORM_ATTINY
@@ -1351,14 +1398,21 @@ these examples and explanations and extend them to suit your needs.
  #if defined(ARDUINO_ARCH_STM32F4)
   // output to Serial causes hangs on STM32 F4 Discovery board
   // There seems to be no way to output text to the USB connection
+  #undef Serial						   
   #define Serial Serial2
  #endif
 #elif (RH_PLATFORM == RH_PLATFORM_ATTINY)
-  #warning Arduino TinyCore does not support hardware SPI. Use software SPI instead.
+  #include <Arduino.h>
+//  #warning Arduino TinyCore does not support hardware SPI. Use software SPI instead.
 #elif (RH_PLATFORM == RH_PLATFORM_ATTINY_MEGA)
  #include <SPI.h>
   #define RH_HAVE_HARDWARE_SPI
-  #define RH_HAVE_SERIAL						   
+  #define RH_HAVE_SERIAL
+  // On most AT_TINY_MEGA, Timer A is used for millis/micros, and B 0 for Tone by default. We therefore choose Timer B 1
+  // But not all devices support TCB1, so you may want to change these to TCB0 on some variants
+#define RH_ATTINY_MEGA_ASK_TIMER TCB1
+#define RH_ATTINY_MEGA_ASK_TIMER_VECTOR TCB1_INT_vect
+						   
 #elif (RH_PLATFORM == RH_PLATFORM_ESP8266) // ESP8266 processor on Arduino IDE
  #include <Arduino.h>
  #include <SPI.h>
@@ -1476,6 +1530,8 @@ these examples and explanations and extend them to suit your needs.
  #define RH_HAVE_HARDWARE_SPI
  #define RH_HAVE_SERIAL
  #define PROGMEM
+// You can enable MUTEX to protect critical sections for multithreading						   
+// #define RH_USE_MUTEX
  #if (__has_include (<pigpio.h>))
   #include <RHutil_pigpio/RasPi.h>
  #else
@@ -1661,8 +1717,22 @@ these examples and explanations and extend them to suit your needs.
   #define ntohl(x) (x)
 
  #else
-  #error "Dont know how to define htons and friends for this processor" 
+  #error "RadioHead.h: Dont know how to define htons and friends for this processor" 
  #endif
+#endif
+
+// Some platforms need a mutex for multihreaded case
+#ifdef RH_USE_MUTEX
+ #include <pthread.h>
+ #define RH_DECLARE_MUTEX(X) pthread_mutex_t X;						   
+ #define RH_MUTEX_INIT(X) pthread_mutex_init(&X, NULL)
+ #define RH_MUTEX_LOCK(X) pthread_mutex_lock(&X)
+ #define RH_MUTEX_UNLOCK(X) pthread_mutex_unlock(&X)						   
+#else
+ #define RH_DECLARE_MUTEX(X)
+ #define RH_MUTEX_INIT(X)
+ #define RH_MUTEX_LOCK(X)
+ #define RH_MUTEX_UNLOCK(X)
 #endif
 
 // This is the address that indicates a broadcast

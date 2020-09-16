@@ -2,7 +2,7 @@
 // Author: Mike McCauley (mikem@airspayce.com)
 // Copyright (C) 2011 Mike McCauley
 // Contributed by Joanna Rutkowska
-// $Id: RHHardwareSPI.cpp,v 1.27 2020/05/06 22:26:45 mikem Exp mikem $
+// $Id: RHHardwareSPI.cpp,v 1.29 2020/08/04 09:02:14 mikem Exp $
 
 #include <RHHardwareSPI.h>
 
@@ -105,8 +105,9 @@ void RHHardwareSPI::begin()
     // So too does rogerclarkmelbourne/Arduino_STM32
     // So too does GrumpyOldPizza/ArduinoCore-stm32l0 
     ::BitOrder bitOrder;
-#elif (RH_PLATFORM == RH_PLATFORM_ATTINY_MEGA)
-   ::BitOrder bitOrder;
+// This no longer relevant: new versions is uint8_t
+//#elif (RH_PLATFORM == RH_PLATFORM_ATTINY_MEGA)
+//   ::BitOrder bitOrder;
 #else
     uint8_t bitOrder;
 #endif

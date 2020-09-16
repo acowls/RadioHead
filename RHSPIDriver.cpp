@@ -1,7 +1,7 @@
 // RHSPIDriver.cpp
 //
 // Copyright (C) 2014 Mike McCauley
-// $Id: RHSPIDriver.cpp,v 1.11 2017/11/06 00:04:08 mikem Exp $
+// $Id: RHSPIDriver.cpp,v 1.13 2020/08/04 09:02:14 mikem Exp $
 
 #include <RHSPIDriver.h>
 
@@ -43,12 +43,14 @@ bool RHSPIDriver::init()
 
 uint8_t RHSPIDriver::spiRead(uint8_t reg)
 {
-    uint8_t val;
+    uint8_t val = 0;
     ATOMIC_BLOCK_START;
+    _spi.beginTransaction();
     selectSlave();
     _spi.transfer(reg & ~RH_SPI_WRITE_MASK); // Send the address with the write mask off
     val = _spi.transfer(0); // The written value is ignored, reg value is read
     deselectSlave();
+    _spi.endTransaction();
     ATOMIC_BLOCK_END;
     return val;
 }
